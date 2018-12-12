@@ -183,7 +183,7 @@ public class MyGdxGame extends ApplicationAdapter implements GestureDetector.Ges
         bodyDef.position.set(0, 0);
 
         CircleShape circleSmall = new CircleShape();
-        circleSmall.setRadius(4f); //半径
+        circleSmall.setRadius(Gdx.graphics.getWidth() / 10 / PPM); //半径(屏幕1/4)
 
         FixtureDef fixtureDefSmall = new FixtureDef();
         fixtureDefSmall.shape = circleSmall;
@@ -212,7 +212,7 @@ public class MyGdxGame extends ApplicationAdapter implements GestureDetector.Ges
         bodyDef.fixedRotation = true;
 
         CircleShape circleSmall = new CircleShape();
-        circleSmall.setRadius(1.4f);
+        circleSmall.setRadius(ballSprites.get(pos).size / 2 / PPM);
 
         FixtureDef fixtureDefSmall = new FixtureDef();
         fixtureDefSmall.shape = circleSmall;
