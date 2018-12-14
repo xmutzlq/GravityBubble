@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.Random;
 
 public class MainActivity extends AppCompatActivity implements AndroidFragmentApplication.Callbacks {
-    private static final float MAX_BATCH_SIZE = 172;
+    private static final float MAX_BATCH_SIZE = 90;
     private static final float MIN_BATCH_SIZE = 43;
     ArrayList<BallSprite> ballSprites = new ArrayList<>();
     @Override
@@ -18,7 +18,7 @@ public class MainActivity extends AppCompatActivity implements AndroidFragmentAp
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        for (int i = 0; i < 10; i ++) {
+        for (int i = 0; i < 16; i ++) {
             BallSprite ballSprite = new BallSprite();
             float ranSize = (float) (Math.random() * (MAX_BATCH_SIZE - MIN_BATCH_SIZE) + MIN_BATCH_SIZE);
             ballSprite.size = ranSize;

@@ -43,12 +43,8 @@ public class AndroidLauncher extends FragmentActivity implements AndroidFragment
 		@Override
 		public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 			ArrayList<BallSprite> ballSprites = this.getArguments().getParcelableArrayList("ballSprites");
-            return initializeForView(new MyGdxGame(ballSprites));
-
+            return initializeForView(new MyGdxGame(getActivity(), ballSprites));
         }
     }
-
-
-
 }
 

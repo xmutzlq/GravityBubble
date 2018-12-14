@@ -1,5 +1,8 @@
 package com.mygdx.game;
 
+import android.app.Activity;
+import android.util.Log;
+
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -19,13 +22,18 @@ import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import com.badlogic.gdx.physics.box2d.CircleShape;
 import com.badlogic.gdx.physics.box2d.EdgeShape;
+import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
+import com.badlogic.gdx.physics.box2d.QueryCallback;
 import com.badlogic.gdx.physics.box2d.World;
 
 import java.util.ArrayList;
 
 public class MyGdxGame extends ApplicationAdapter implements GestureDetector.GestureListener, InputProcessor {
-    float PPM = 30f;
+    private static final float PPM = 30f;
+    private static final int ReferenceBallScale = 12;
+
+    Activity mActivity;
 
     ArrayList<BallSprite> ballSprites;
     ArrayList<Body> bodyList;
@@ -33,12 +41,17 @@ public class MyGdxGame extends ApplicationAdapter implements GestureDetector.Ges
 
     Vector3 point;
     Sprite spriteCircle;
+    Body bodyThatWasHit;
+
+    private int radiusUsed;
+    private int touchPosition;
 
     private Box2DDebugRenderer m_debugRenderer;
     private OrthographicCamera camera;
     private World world;
 
-    MyGdxGame(ArrayList<BallSprite> ballSprites) {
+    MyGdxGame(Activity activity, ArrayList<BallSprite> ballSprites) {
+        this.mActivity = activity;
         this.ballSprites = ballSprites;
     }
 
@@ -57,6 +70,8 @@ public class MyGdxGame extends ApplicationAdapter implements GestureDetector.Ges
 
         float width = Gdx.graphics.getWidth() / 2;
         float height = Gdx.graphics.getHeight() / 2;
+
+        radiusUsed = ScreenUtil.isScreenPortrait(mActivity) ? Gdx.graphics.getWidth() : Gdx.graphics.getHeight();
 
         //设置视角举行的大小
         camera = new OrthographicCamera();
@@ -85,8 +100,8 @@ public class MyGdxGame extends ApplicationAdapter implements GestureDetector.Ges
 
         //创建圆体
         for (int i = 0; i < ballSprites.size(); i++) {
-            float x = (float) (Math.random() * (50 - 15) + 15);
-            float y = (float) (Math.random() * (50 - 15) + 15);
+            float x = (float) (Math.random() * (width / PPM - ballSprites.get(i).size) + ballSprites.get(i).size);
+            float y = (float) (Math.random() * (height / PPM - ballSprites.get(i).size) + ballSprites.get(i).size);
             createCircle(x, y, i);
         }
 
@@ -109,9 +124,9 @@ public class MyGdxGame extends ApplicationAdapter implements GestureDetector.Ges
         SpriteBatch spriteBatchReference = batchCircleList.get(i);
         spriteBatchReference.begin();
         spriteBatchReference.draw(spriteCircle,
-                bodyList.get(i).getWorldCenter().x * PPM - ballSprites.get(i).size / 2,
-                bodyList.get(i).getWorldCenter().y * PPM - ballSprites.get(i).size / 2,
-                ballSprites.get(i).size, ballSprites.get(i).size);
+                bodyList.get(i).getWorldCenter().x - radiusUsed / ReferenceBallScale,
+                bodyList.get(i).getWorldCenter().y - radiusUsed / ReferenceBallScale,
+                radiusUsed / 6, radiusUsed / 6);
         spriteBatchReference.setColor(new Color(ballSprites.get(i).color));
         spriteBatchReference.end();
 
@@ -183,7 +198,7 @@ public class MyGdxGame extends ApplicationAdapter implements GestureDetector.Ges
         bodyDef.position.set(0, 0);
 
         CircleShape circleSmall = new CircleShape();
-        circleSmall.setRadius(Gdx.graphics.getWidth() / 10 / PPM); //半径(屏幕1/4)
+        circleSmall.setRadius(radiusUsed / ReferenceBallScale / PPM); //半径(屏幕1/4)
 
         FixtureDef fixtureDefSmall = new FixtureDef();
         fixtureDefSmall.shape = circleSmall;
@@ -220,7 +235,7 @@ public class MyGdxGame extends ApplicationAdapter implements GestureDetector.Ges
 
         Body body = world.createBody(bodyDef);
         body.createFixture(fixtureDefSmall);
-        body.setUserData(new String[]{"unselected", String.valueOf(pos)});
+        body.setUserData(new BallUserData(pos, ballSprites.get(pos).color, false, true));
 
         bodyList.add(body);
         return body;
@@ -242,14 +257,16 @@ public class MyGdxGame extends ApplicationAdapter implements GestureDetector.Ges
 
     /**加速度到指定位置**/
     public void gravityUpdate(Body round) {
-        float a = -(round.getPosition().x);
-        float b = -(round.getPosition().y);
-        float c = (float) Math.sqrt(Math.pow(a, 2) + Math.pow(b, 2));
-        float d = c / 50;
-
-        Vector2 v2 = new Vector2(bodyList.get(0).getPosition().x, bodyList.get(0).getPosition().y);
-        Vector2 v1 = new Vector2(a / d, b / d);
-        round.applyForceToCenter(v1, false);
+        BallUserData userData = (BallUserData) round.getUserData();
+        if(userData != null && userData.isNeedGravity) {
+            float a = -(round.getPosition().x);
+            float b = -(round.getPosition().y);
+            float c = (float) Math.sqrt(Math.pow(a, 2) + Math.pow(b, 2));
+            float d = c / 100;
+            Vector2 v2 = new Vector2(round.getPosition().x, round.getPosition().y);
+            Vector2 v1 = new Vector2(a / d, b / d);
+            round.applyForce(v1, v2, true);
+        }
     }
 
     /**立即运动到指定位置**/
@@ -267,14 +284,22 @@ public class MyGdxGame extends ApplicationAdapter implements GestureDetector.Ges
     private void moveToCenter() {
         for (int i = 0; i < bodyList.size(); i ++) {
             Body body = bodyList.get(i);
-            body.applyForceToCenter(body.getWorldCenter(), false);
+            float c = (float) Math.sqrt(Math.pow(body.getWorldCenter().x, 2) + Math.pow(body.getWorldCenter().x, 2));
+            float d = c / 100;
+            Vector2 v1 = new Vector2(body.getWorldCenter().x / d, body.getWorldCenter().y / d);
+            body.applyForceToCenter(v1, false);
         }
     }
 
     public void batchUpdate(SpriteBatch batchCircle, Body round, BallSprite ballSprite) {
+        BallUserData userData = (BallUserData) round.getUserData();
         float ballSize = ballSprite.size;
         batchCircle.begin();
-        batchCircle.draw(spriteCircle, round.getPosition().x * PPM - ballSize / 2, round.getPosition().y * PPM - ballSize / 2, ballSize, ballSize);
+        if(userData.isOnDrag) {
+            batchCircle.draw(spriteCircle, point.x - ballSize / 2, point.y - ballSize / 2, ballSize, ballSize);
+        } else {
+            batchCircle.draw(spriteCircle, round.getPosition().x * PPM - ballSize / 2, round.getPosition().y * PPM - ballSize / 2, ballSize, ballSize);
+        }
         batchCircle.setColor(new Color(ballSprite.color));
         batchCircle.end();
     }
@@ -288,7 +313,7 @@ public class MyGdxGame extends ApplicationAdapter implements GestureDetector.Ges
 
     @Override
     public boolean tap(float x, float y, int count, int button) {
-        System.out.println("event tp screen" + x + " " + y);
+        Log.e("zlq", "tap");
         return false;
     }
 
@@ -345,20 +370,74 @@ public class MyGdxGame extends ApplicationAdapter implements GestureDetector.Ges
     }
 
     @Override
-    public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+    public boolean touchDown(int screenX, int screenY, final int pointer, int button) {
+        point = new Vector3(screenX, screenY, 0);
+        camera.unproject(point);
+        world.QueryAABB(new QueryCallback() {
+            @Override
+            public boolean reportFixture(Fixture fixture) {
+                if (fixture.testPoint(point.x / PPM, point.y / PPM)) {
+                    bodyThatWasHit = fixture.getBody();
+                    int position = 0;
+                    for (Body body : bodyList) {
+                        BallUserData userData = (BallUserData) body.getUserData();
+                        BallUserData hitUserData = (BallUserData) bodyThatWasHit.getUserData();
+                        if(hitUserData == null) {
+                            touchPosition = -1;
+                            break;
+                        }
+                        if(userData != null && hitUserData != null &&
+                                userData.position == hitUserData.position) {
+                            touchPosition = position;
+                            userData.isNeedGravity = false;
+                            userData.isOnDrag = true;
+                            break;
+                        }
+                        position ++;
+                    }
+                }
+                return false;
+            }
+        }, point.x / PPM, point.y / PPM, point.x / PPM, point.y / PPM);
         return false;
     }
 
     @Override
     public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+        point = new Vector3(screenX, screenY, 0);
+        camera.unproject(point);
+        if(bodyThatWasHit != null) {
+            point.x = point.x - (bodyThatWasHit.getPosition().x * 2);
+            point.y = point.y - (bodyThatWasHit.getPosition().y * 2);
+            float c = (float) Math.sqrt(Math.pow(point.x, 2) + Math.pow(point.y, 2));
+            float d = c / 10;
+            bodyList.get(touchPosition).getPosition().x = point.x / d;
+            bodyList.get(touchPosition).getPosition().y = point.y / d;
+            bodyThatWasHit = null;
+        }
+        for (Body body : bodyList) {
+            BallUserData userData = (BallUserData) body.getUserData();
+            if(userData != null) {
+                userData.isNeedGravity = true;
+                userData.isOnDrag = false;
+            }
+        }
+        //参照物包含物体
         return false;
     }
 
     @Override
     public boolean touchDragged(int screenX, int screenY, int pointer) {
-        point.set(screenX, screenY, 0);
+        if(bodyThatWasHit == null || pointer == 1 || touchPosition == -1) return false;
+        point = new Vector3(screenX, screenY, 0);
         camera.unproject(point);
-        motionUpdate(point.x, point.y, 10);
+        point.x = point.x - (bodyThatWasHit.getPosition().x * 2);
+        point.y = point.y - (bodyThatWasHit.getPosition().y * 2);
+        float c = (float) Math.sqrt(Math.pow(point.x, 2) + Math.pow(point.y, 2));
+        float d = c / 10;
+        Vector2 v2 = new Vector2(bodyThatWasHit.getPosition().x, bodyThatWasHit.getPosition().y);
+        Vector2 v1 = new Vector2(point.x / d, point.y / d);
+        bodyThatWasHit.setLinearVelocity(v1);
         return false;
     }
 
