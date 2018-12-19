@@ -12,6 +12,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.input.GestureDetector;
 import com.badlogic.gdx.math.Vector2;
@@ -22,7 +23,10 @@ import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.QueryCallback;
 import com.badlogic.gdx.physics.box2d.World;
+import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.utils.Scaling;
+import com.badlogic.gdx.utils.viewport.ScalingViewport;
 import com.mygdx.game.body.BaseBody;
 import com.mygdx.game.body.CircleBody;
 import com.mygdx.game.body.WallBody;
@@ -31,6 +35,7 @@ import com.mygdx.game.entity.BallData;
 import java.util.ArrayList;
 
 public class MyGdxGame extends ApplicationAdapter implements GestureDetector.GestureListener, InputProcessor, BallsManage.IBallOperateCallBack {
+    private static final String TAG = "zlq";
     private static final float PPM = 30f;
     private static final int ReferenceBallScale = 12;
 
@@ -41,6 +46,7 @@ public class MyGdxGame extends ApplicationAdapter implements GestureDetector.Ges
     private Box2DDebugRenderer m_debugRenderer;
     private OrthographicCamera camera;
     private World world;
+    private Stage stage;
 
     private ArrayList<BallData> ballData;
 
@@ -66,25 +72,27 @@ public class MyGdxGame extends ApplicationAdapter implements GestureDetector.Ges
     public void create() {
         // 设置Log输出级别
         Gdx.app.setLogLevel(Application.LOG_DEBUG);
+        width = Gdx.graphics.getWidth();
+        height = Gdx.graphics.getHeight();
+        float cameraWidth = width / 2;
+        float cameraHeight = height / 2;
 
         mBallsManage = BallsManage.getInstance();
         mBallsManage.setBallRemoveCallBack(this);
+
+        stage = new Stage(new ScalingViewport(Scaling.stretch, width, height, new OrthographicCamera()));
         Image image = new Image(new Texture("timg.jpg"));
         image.setSize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        mBallsManage.stage.addActor(image);
+        stage.addActor(image);
 
         //手势
         InputMultiplexer im = new InputMultiplexer();
-        im.addProcessor(mBallsManage.stage);
+        im.addProcessor(stage);
         im.addProcessor(this);
         GestureDetector gd = new GestureDetector(this);
         im.addProcessor(gd);
         Gdx.input.setInputProcessor(im);
 
-        width = Gdx.graphics.getWidth();
-        height = Gdx.graphics.getHeight();
-        float cameraWidth = width / 2;
-        float cameraHeight = height / 2;
 
         radiusUsed = ScreenUtil.isScreenPortrait(mActivity) ? width : height;
 
@@ -109,6 +117,7 @@ public class MyGdxGame extends ApplicationAdapter implements GestureDetector.Ges
         createWall(-point.x / (PPM), point.y / (PPM), -point.x / (PPM), -point.y / (PPM));   //left wall
         createWall(point.x / (PPM), point.y / (PPM), point.x / (PPM), -point.y / (PPM));     //right wall
 
+        mBallsManage.referenceCircle = new Sprite(new Texture("circle.png"));
         mBallsManage.initBallSprites(ballData);
 
         //创建参照物
@@ -132,8 +141,8 @@ public class MyGdxGame extends ApplicationAdapter implements GestureDetector.Ges
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         m_debugRenderer.render(world, camera.combined);
 
-        mBallsManage.stage.act();
-        mBallsManage.stage.draw();
+        stage.act();
+        stage.draw();
 
         //参照物
         BallSprite spriteBatchReference = mBallsManage.referenceSpriteBatch;
@@ -142,7 +151,7 @@ public class MyGdxGame extends ApplicationAdapter implements GestureDetector.Ges
                 mBallsManage.referenceBody.getWorldCenter().x - radiusUsed / ReferenceBallScale,
                 mBallsManage.referenceBody.getWorldCenter().y - radiusUsed / ReferenceBallScale,
                 radiusUsed / 6, radiusUsed / 6);
-        spriteBatchReference.setColor(new Color(spriteBatchReference.color));
+        //spriteBatchReference.setColor(new Color(spriteBatchReference.color));
         spriteBatchReference.end();
 
         //其他小球
@@ -188,8 +197,8 @@ public class MyGdxGame extends ApplicationAdapter implements GestureDetector.Ges
     public void dispose() {
         m_debugRenderer.dispose();
         world.dispose();
+        stage.dispose();
         mBallsManage.release();
-        mBallsManage = null;
     }
 
     /** 创建墙体 **/

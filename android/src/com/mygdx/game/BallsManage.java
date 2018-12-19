@@ -13,6 +13,7 @@ import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.viewport.ScalingViewport;
+import com.bumptech.glide.Glide;
 import com.mygdx.game.entity.BallData;
 import com.mygdx.game.entity.DataModel;
 import com.mygdx.game.sprite.NetSprite;
@@ -26,8 +27,6 @@ import java.util.ArrayList;
 
 public class BallsManage {
     public static final String TAG = "zlq";
-
-    public Stage stage;
 
     private ArrayList<BallData> ballData; //小球属性
     public ArrayList<BallSprite> ballSprites; //带小球属性的SpriteBatch
@@ -46,8 +45,6 @@ public class BallsManage {
         ballSprites = new ArrayList<>();
         bodies = new ArrayList<>();
         netSprites = new ArrayList<>();
-        referenceCircle = new Sprite(new Texture("circle.png"));
-        stage = new Stage(new ScalingViewport(Scaling.stretch, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), new OrthographicCamera()));
     }
 
     private static class SingletonInstance {
@@ -91,17 +88,17 @@ public class BallsManage {
                     Gdx.app.postRunnable(new Runnable() {
                         @Override
                         public void run() {
-                            // 把字节数组加载为 Pixmap
-                            Pixmap pixmap = new Pixmap(result, 0, result.length);
-                            // 把 pixmap 加载为纹理
-                            Texture texture = new Texture(pixmap);
-                            // pixmap 不再需要使用到, 释放内存占用
-                            pixmap.dispose();
-                            // 使用纹理创建演员
-                            NetSprite sprite = new NetSprite();
-                            sprite.createSprite(texture);
-                            // 添加精灵
-                            netSprites.add(sprite);
+                        // 把字节数组加载为 Pixmap
+                        Pixmap pixmap = new Pixmap(result, 0, result.length);
+                        // 把 pixmap 加载为纹理
+                        Texture texture = new Texture(pixmap);
+                        // pixmap 不再需要使用到, 释放内存占用
+                        pixmap.dispose();
+                        // 使用纹理
+                        NetSprite sprite = new NetSprite();
+                        sprite.createSprite(texture);
+                        // 添加精灵
+                        netSprites.add(sprite);
                         }
                     });
                 } else {
@@ -174,25 +171,15 @@ public class BallsManage {
         for (SpriteBatch spritebatch : ballSprites) {
             spritebatch.dispose();
         }
+        clearReference();
         ballData.clear();
         ballSprites.clear();
         bodies.clear();
         netSprites.clear();
-        clearReference();
-
-        stage.dispose();
-
-        ballData = null;
-        ballSprites = null;
-        bodies = null;
-        netSprites = null;
     }
 
     public void clearReference() {
         referenceSpriteBatch.dispose();
-        referenceSpriteBatch = null;
-        referenceBody = null;
-        referenceCircle = null;
     }
 
     interface IBallOperateCallBack {
