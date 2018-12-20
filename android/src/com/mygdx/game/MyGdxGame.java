@@ -8,7 +8,6 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.InputProcessor;
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
@@ -24,13 +23,15 @@ import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.QueryCallback;
 import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.viewport.ScalingViewport;
+import com.mygdx.game.actor.ActorBuilder;
+import com.mygdx.game.actor.ActorsImp;
 import com.mygdx.game.body.BaseBody;
 import com.mygdx.game.body.CircleBody;
 import com.mygdx.game.body.WallBody;
 import com.mygdx.game.entity.BallData;
+import com.mygdx.game.util.ScreenUtil;
 
 import java.util.ArrayList;
 
@@ -51,6 +52,7 @@ public class MyGdxGame extends ApplicationAdapter implements GestureDetector.Ges
     private ArrayList<BallData> ballData;
 
     private BallsManage mBallsManage;
+    private ActorBuilder mActorBuilder;
 
     private Vector2 reversVec; //反向力
     private Vector3 point;
@@ -80,27 +82,29 @@ public class MyGdxGame extends ApplicationAdapter implements GestureDetector.Ges
         mBallsManage = BallsManage.getInstance();
         mBallsManage.setBallRemoveCallBack(this);
 
+        //演着构建器
+        mActorBuilder = new ActorBuilder(new ActorsImp());
+
+        //舞台
         stage = new Stage(new ScalingViewport(Scaling.stretch, width, height, new OrthographicCamera()));
-        Image image = new Image(new Texture("timg.jpg"));
-        image.setSize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        stage.addActor(image);
+        stage.addActor(mActorBuilder.getBgActor());
 
         //手势
         InputMultiplexer im = new InputMultiplexer();
-        im.addProcessor(stage);
+        im.addProcessor(stage); // 添加舞台
         im.addProcessor(this);
         GestureDetector gd = new GestureDetector(this);
         im.addProcessor(gd);
         Gdx.input.setInputProcessor(im);
 
-
+        //半径横竖屏适配
         radiusUsed = ScreenUtil.isScreenPortrait(mActivity) ? width : height;
 
-        //设置视角举行的大小
+        //设置视角的大小
         camera = new OrthographicCamera();
         camera.setToOrtho(false, cameraWidth, cameraHeight);
 
-        //太空失重
+        //(0,0)太空失重
         world = new World(new Vector2(0, 0), false);
         //描绘器
         m_debugRenderer = new Box2DDebugRenderer();
@@ -151,7 +155,6 @@ public class MyGdxGame extends ApplicationAdapter implements GestureDetector.Ges
                 mBallsManage.referenceBody.getWorldCenter().x - radiusUsed / ReferenceBallScale,
                 mBallsManage.referenceBody.getWorldCenter().y - radiusUsed / ReferenceBallScale,
                 radiusUsed / 6, radiusUsed / 6);
-        //spriteBatchReference.setColor(new Color(spriteBatchReference.color));
         spriteBatchReference.end();
 
         //其他小球
@@ -306,7 +309,7 @@ public class MyGdxGame extends ApplicationAdapter implements GestureDetector.Ges
             public boolean reportFixture(Fixture fixture) {
                 if (fixture.testPoint(point.x / PPM, point.y / PPM)) {
                     BallUserData hitUserData = (BallUserData) fixture.getBody().getUserData();
-                    if (hitUserData != null && hitUserData.position != 0) {
+                    if (hitUserData != null && hitUserData.position != -1) {
                         joinToReference(tmpBallUserData.color);
                     }
                 }

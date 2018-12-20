@@ -1,8 +1,9 @@
 package com.mygdx.game;
 
+import android.graphics.Bitmap;
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Net;
-import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
@@ -10,13 +11,10 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.net.HttpRequestBuilder;
 import com.badlogic.gdx.net.HttpStatus;
 import com.badlogic.gdx.physics.box2d.Body;
-import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.utils.Scaling;
-import com.badlogic.gdx.utils.viewport.ScalingViewport;
-import com.bumptech.glide.Glide;
 import com.mygdx.game.entity.BallData;
 import com.mygdx.game.entity.DataModel;
 import com.mygdx.game.sprite.NetSprite;
+import com.mygdx.game.util.ImageUtils;
 
 import java.util.ArrayList;
 
@@ -77,10 +75,15 @@ public class BallsManage {
                 if (httpStatus.getStatusCode() == 200) {
                     Gdx.app.log(TAG, "请求成功");
                     // 以字节数组的方式获取响应内容
-                    final byte[] result = httpResponse.getResult();
+                    byte[] result = httpResponse.getResult();
                     // 还可以以流或字符串的方式获取
                     // httpResponse.getResultAsStream();
                     // httpResponse.getResultAsString();
+                    Bitmap bitmap = ImageUtils.bytes2Bitmap(result);
+                    Bitmap transparentBitmap = ImageUtils.getTransparentBitmap(bitmap, 90);
+                    Bitmap roundBitmap = ImageUtils.toRound(transparentBitmap, true);
+                    Bitmap frameRoundBitmap = ImageUtils.addFrame(roundBitmap, 3, 0, true);
+                    final byte[] realResult = ImageUtils.bitmap2Bytes(frameRoundBitmap, Bitmap.CompressFormat.PNG);
                     /*
                      * 在响应回调中属于其他线程, 获取到响应结果后需要
                      * 提交到 渲染线程（create 和 render 方法执行所在线程） 处理。
@@ -88,17 +91,17 @@ public class BallsManage {
                     Gdx.app.postRunnable(new Runnable() {
                         @Override
                         public void run() {
-                        // 把字节数组加载为 Pixmap
-                        Pixmap pixmap = new Pixmap(result, 0, result.length);
-                        // 把 pixmap 加载为纹理
-                        Texture texture = new Texture(pixmap);
-                        // pixmap 不再需要使用到, 释放内存占用
-                        pixmap.dispose();
-                        // 使用纹理
-                        NetSprite sprite = new NetSprite();
-                        sprite.createSprite(texture);
-                        // 添加精灵
-                        netSprites.add(sprite);
+                            // 把字节数组加载为 Pixmap
+                            Pixmap pixmap = new Pixmap(realResult, 0, realResult.length);
+                            // 把 pixmap 加载为纹理
+                            Texture texture = new Texture(pixmap);
+                            // pixmap 不再需要使用到, 释放内存占用
+                            pixmap.dispose();
+                            // 使用纹理
+                            NetSprite sprite = new NetSprite();
+                            sprite.createSprite(texture);
+                            // 添加精灵
+                            netSprites.add(sprite);
                         }
                     });
                 } else {

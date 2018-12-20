@@ -1,7 +1,9 @@
 package com.mygdx.game;
 
 import android.app.Application;
-import android.support.multidex.MultiDex;
+
+import com.mygdx.game.util.Utils;
+//import android.support.multidex.MultiDex;
 
 public class MyApplication extends Application {
 
@@ -11,6 +13,7 @@ public class MyApplication extends Application {
     public void onCreate() {
         super.onCreate();
         instance = this;
-        MultiDex.install(this);
+        Utils.init(this);
+//        MultiDex.install(this);
     }
 }
