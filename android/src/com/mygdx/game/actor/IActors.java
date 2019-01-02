@@ -9,4 +9,5 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 
 public interface IActors {
     Actor bgActor();
+    Actor shownTvActor();
 }

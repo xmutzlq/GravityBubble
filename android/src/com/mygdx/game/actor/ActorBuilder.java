@@ -16,4 +16,8 @@ public class ActorBuilder {
     public Actor getBgActor() {
         return actors.bgActor();
     }
+
+    public Actor getShownTvActor() {
+        return actors.shownTvActor();
+    }
 }

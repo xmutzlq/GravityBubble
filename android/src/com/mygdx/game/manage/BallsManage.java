@@ -1,4 +1,4 @@
-package com.mygdx.game;
+package com.mygdx.game.manage;
 
 import android.graphics.Bitmap;
 
@@ -185,7 +185,7 @@ public class BallsManage {
         referenceSpriteBatch.dispose();
     }
 
-    interface IBallOperateCallBack {
+    public interface IBallOperateCallBack {
         void onBallDetach(Body body);
         Body onBallAttach(int pos);
     }

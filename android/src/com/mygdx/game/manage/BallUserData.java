@@ -1,4 +1,4 @@
-package com.mygdx.game;
+package com.mygdx.game.manage;
 
 /**
  * @author lq.zeng
@@ -6,12 +6,12 @@ package com.mygdx.game;
  */
 
 public class BallUserData {
-    int position; //索引
-    int color; //颜色
-    float radius; //半径
-    boolean isSelected; //是否选中
-    boolean isNeedGravity; //是否需要引力
-    boolean isOnDrag; //是否拖拽
+    public int position; //索引
+    public int color; //颜色
+    public float radius; //半径
+    public boolean isSelected; //是否选中
+    public boolean isNeedGravity; //是否需要引力
+    public boolean isOnDrag; //是否拖拽
 
     public BallUserData() {}
 

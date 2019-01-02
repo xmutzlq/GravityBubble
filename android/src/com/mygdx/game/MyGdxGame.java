@@ -31,13 +31,17 @@ import com.mygdx.game.body.BaseBody;
 import com.mygdx.game.body.CircleBody;
 import com.mygdx.game.body.WallBody;
 import com.mygdx.game.entity.BallData;
+import com.mygdx.game.manage.BallSprite;
+import com.mygdx.game.manage.BallUserData;
+import com.mygdx.game.manage.BallsManage;
+import com.mygdx.game.manage.FontsManage;
 import com.mygdx.game.util.ScreenUtil;
 
 import java.util.ArrayList;
 
 public class MyGdxGame extends ApplicationAdapter implements GestureDetector.GestureListener, InputProcessor, BallsManage.IBallOperateCallBack {
     private static final String TAG = "zlq";
-    private static final float PPM = 30f;
+    public static final float PPM = 30f;
     private static final int ReferenceBallScale = 12;
 
     private Activity mActivity;
@@ -53,6 +57,8 @@ public class MyGdxGame extends ApplicationAdapter implements GestureDetector.Ges
 
     private BallsManage mBallsManage;
     private ActorBuilder mActorBuilder;
+
+    private FontsManage mFontsManage;
 
     private Vector2 reversVec; //反向力
     private Vector3 point;
@@ -82,12 +88,16 @@ public class MyGdxGame extends ApplicationAdapter implements GestureDetector.Ges
         mBallsManage = BallsManage.getInstance();
         mBallsManage.setBallRemoveCallBack(this);
 
+        mFontsManage = FontsManage.getInstance();
+        mFontsManage.create();
+
         //演着构建器
         mActorBuilder = new ActorBuilder(new ActorsImp());
 
         //舞台
         stage = new Stage(new ScalingViewport(Scaling.stretch, width, height, new OrthographicCamera()));
         stage.addActor(mActorBuilder.getBgActor());
+//        stage.addActor(mActorBuilder.getShownTvActor());
 
         //手势
         InputMultiplexer im = new InputMultiplexer();
@@ -163,6 +173,8 @@ public class MyGdxGame extends ApplicationAdapter implements GestureDetector.Ges
             batchUpdate(i, mBallsManage.ballSprites.get(i), body, mBallsManage.ballSprites.get(i));
         }
 
+        mFontsManage.render();
+
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) Gdx.app.exit();
     }
 
@@ -202,6 +214,7 @@ public class MyGdxGame extends ApplicationAdapter implements GestureDetector.Ges
         world.dispose();
         stage.dispose();
         mBallsManage.release();
+        mFontsManage.dispose();
     }
 
     /** 创建墙体 **/
@@ -246,6 +259,7 @@ public class MyGdxGame extends ApplicationAdapter implements GestureDetector.Ges
         camera.position.set(position);
         camera.update();
         mBallsManage.referenceSpriteBatch.setProjectionMatrix(camera.combined);
+        mFontsManage.batch.setProjectionMatrix(camera.combined);
         for (SpriteBatch batch : mBallsManage.ballSprites) {
             batch.setProjectionMatrix(camera.combined);
         }
