@@ -158,6 +158,9 @@ public class MyGdxGame extends ApplicationAdapter implements GestureDetector.Ges
         stage.act();
         stage.draw();
 
+        //文字提示
+        mFontsManage.render();
+
         //参照物
         BallSprite spriteBatchReference = mBallsManage.referenceSpriteBatch;
         spriteBatchReference.begin();
@@ -172,8 +175,6 @@ public class MyGdxGame extends ApplicationAdapter implements GestureDetector.Ges
             Body body = mBallsManage.bodies.get(i);
             batchUpdate(i, mBallsManage.ballSprites.get(i), body, mBallsManage.ballSprites.get(i));
         }
-
-        mFontsManage.render();
 
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) Gdx.app.exit();
     }
@@ -226,6 +227,7 @@ public class MyGdxGame extends ApplicationAdapter implements GestureDetector.Ges
     /**创建参照物球体**/
     private void createReferenceBody() {
         referenceRadius = radiusUsed / ReferenceBallScale / PPM;
+        if(mFontsManage != null) mFontsManage.setReferenceRadius(referenceRadius);
         Body body = createBody(BodyDef.BodyType.StaticBody, 0, 0, referenceRadius);
         body.setUserData(new BallUserData(-1, mBallsManage.referenceSpriteBatch.color, referenceRadius, false, true));
         mBallsManage.referenceBody = body;
@@ -446,8 +448,7 @@ public class MyGdxGame extends ApplicationAdapter implements GestureDetector.Ges
 //        mBallsManage.bodies.get(0).getFixtureList().get(0).getShape().setRadius(changeRadius); //改变半径
         int tmpColor = color;
         mBallsManage.removeBall(touchPosition);
-        BallSprite referenceData = mBallsManage.ballSprites.get(0);
-        referenceData.color = tmpColor; //改变内容
+        mBallsManage.referenceSpriteBatch.color = tmpColor; //改变内容
 //        for (int i = 1; i < mBallsManage.bodies.size(); i++) {
 //            Body body = mBallsManage.bodies.get(i);
 //            DistanceJointDef jointDefDis = new DistanceJointDef();

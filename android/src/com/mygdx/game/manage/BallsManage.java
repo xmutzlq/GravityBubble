@@ -28,8 +28,10 @@ public class BallsManage {
 
     private ArrayList<BallData> ballData; //小球属性
     public ArrayList<BallSprite> ballSprites; //带小球属性的SpriteBatch
-    public ArrayList<Body> bodies; //引力球Body
+    public ArrayList<BallSprite> ballSpritesCache; //带小球属性的SpriteBatch缓存
+
     public ArrayList<NetSprite> netSprites; //网络精灵
+    public ArrayList<Body> bodies; //引力球Body
 
     public BallSprite referenceSpriteBatch; //参照物SpriteBatch
     public Body referenceBody; //参照物Body
@@ -37,10 +39,13 @@ public class BallsManage {
 
     public int cachePosition = -1;
 
+    private boolean isJoin;
+
     private IBallOperateCallBack mBallRemoveCallBack;
 
     private BallsManage() {
         ballSprites = new ArrayList<>();
+        ballSpritesCache = new ArrayList<>();
         bodies = new ArrayList<>();
         netSprites = new ArrayList<>();
     }
@@ -130,6 +135,10 @@ public class BallsManage {
         });
     }
 
+    public void replaceReferenceSprite(Sprite sprite) {
+        referenceCircle = sprite;
+    }
+
     public void setBallRemoveCallBack(IBallOperateCallBack ballRemoveCallBack) {
         mBallRemoveCallBack = ballRemoveCallBack;
     }
@@ -150,9 +159,12 @@ public class BallsManage {
     }
 
     public void removeBall(int position) {
+        isJoin = !isJoin;
         cachePosition = position;
         if(mBallRemoveCallBack != null && position <= bodies.size() - 1) {
             mBallRemoveCallBack.onBallDetach(bodies.get(position));
+            replaceReferenceSprite(netSprites.get(position).mSprite);
+            netSprites.remove(position);
             ballSprites.remove(position);
             bodies.remove(position);
         }
